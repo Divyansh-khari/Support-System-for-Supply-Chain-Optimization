@@ -8,7 +8,7 @@ Azure Container Apps, using a supply-allocation optimizer as the workload.
 ## Status
 
 - [x] Phase 1: allocation workload (`scm_core/`) and tests
-- [ ] Phase 2: services (API, optimization, simulation)
+- [x] Phase 2: services (API, optimization, simulation)
 - [ ] Phase 3: Docker, local test
 - [ ] Phase 4: Azure deployment
 - [ ] Phase 5: monitoring and load testing

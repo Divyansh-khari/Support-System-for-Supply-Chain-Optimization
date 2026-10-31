@@ -62,3 +62,24 @@ def generate_instance(n_warehouses: int, n_stores: int, seed: int = 0,
         cost=np.round(cost, 3).tolist(),
         penalty=penalty.round(3).tolist(),
     )
+
+
+
+def make_instance(supply: list[float], demand: list[float], cost: list[list[float]],
+                  penalty: float | None = None) -> Instance:
+    """Wrap user-supplied numbers in an Instance.
+
+    If no penalty is given, use the same rule as the generator: twice the
+    dearest shipping cost, so shipping is always preferred over a shortage.
+    """
+    if penalty is None:
+        penalty = max(max(row) for row in cost) * 2 or 1.0
+    return Instance(
+        n_warehouses=len(supply),
+        n_stores=len(demand),
+        seed=-1,                      # -1 marks "not generated"
+        supply=[float(v) for v in supply],
+        demand=[float(v) for v in demand],
+        cost=[[float(v) for v in row] for row in cost],
+        penalty=[float(penalty)] * len(demand),
+    )
