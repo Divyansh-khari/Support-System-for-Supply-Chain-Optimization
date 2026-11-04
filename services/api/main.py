@@ -39,6 +39,9 @@ client = httpx.AsyncClient(timeout=TIMEOUT,
                                     limits=httpx.Limits(keepalive_expiry=60))
 
 
+_client: httpx.AsyncClient | None = None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Open one shared HTTP client at start-up and close it at shutdown.
@@ -49,7 +52,10 @@ async def lifespan(app: FastAPI):
     """
     global _client
     if MODE == "microservices":
-        _client = httpx.AsyncClient(timeout=TIMEOUT)
+        # keepalive_expiry=60: keep idle connections open for 60 s (httpx default
+        # is 5 s), so a pause between requests does not force a fresh connection.
+        _client = httpx.AsyncClient(timeout=TIMEOUT,
+                                    limits=httpx.Limits(keepalive_expiry=60))
     yield
     if _client:
         await _client.aclose()
