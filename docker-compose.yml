@@ -1,0 +1,47 @@
+# Local test of both deployments from the same image.
+#
+#   docker compose --profile monolith up --build        -> http://localhost:8000
+#   docker compose --profile microservices up --build   -> http://localhost:8080
+#
+# CPU limits mirror Experiment A's rule: same total budget either way
+# (monolith 1.5 CPU; microservices 0.5 + 0.5 + 0.5).
+
+x-app: &app
+  build: .
+  image: scso-app:local
+
+services:
+  monolith:
+    <<: *app
+    profiles: [monolith]
+    environment: { SERVICE: api, MODE: monolith }
+    ports: ["8000:8000"]
+    cpus: 1.5
+    mem_limit: 3g
+
+  api:
+    <<: *app
+    profiles: [microservices]
+    environment:
+      SERVICE: api
+      MODE: microservices
+      OPTIMIZER_URL: http://optimizer:8000
+      SIMULATION_URL: http://simulation:8000
+    ports: ["8080:8000"]
+    depends_on: [optimizer, simulation]
+    cpus: 0.5
+    mem_limit: 1g
+
+  optimizer:
+    <<: *app
+    profiles: [microservices]
+    environment: { SERVICE: optimizer }
+    cpus: 0.5
+    mem_limit: 1g
+
+  simulation:
+    <<: *app
+    profiles: [microservices]
+    environment: { SERVICE: simulation }
+    cpus: 0.5
+    mem_limit: 1g

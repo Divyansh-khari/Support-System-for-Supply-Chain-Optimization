@@ -33,7 +33,10 @@ REPLICA = os.getenv("CONTAINER_APP_REPLICA_NAME", socket.gethostname())
 if MODE not in {"monolith", "microservices"}:
     raise RuntimeError(f"MODE must be 'monolith' or 'microservices', got {MODE!r}")
 
-_client: httpx.AsyncClient | None = None
+# keepalive_expiry=60: keep idle connections open for 60 s (httpx default
+# is 5 s), so a pause between requests does not force a fresh connection.
+client = httpx.AsyncClient(timeout=TIMEOUT,
+                                    limits=httpx.Limits(keepalive_expiry=60))
 
 
 @asynccontextmanager
