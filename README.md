@@ -10,7 +10,7 @@ Azure Container Apps, using a supply-allocation optimizer as the workload.
 - [x] Phase 1: allocation workload (`scm_core/`) and tests
 - [x] Phase 2: services (API, optimization, simulation)
 - [x] Phase 3: Docker, local test
-- [ ] Phase 4: Azure deployment
+- [x] Phase 4: Azure deployment
 - [ ] Phase 5: monitoring and load testing
 - [ ] Phase 6: experiments A, B, C
 - [ ] Phase 7: analysis and report
@@ -49,3 +49,29 @@ must exclude a warm-up period from the results.
 | `scm_core/simulation.py` | Monte Carlo demand scenarios, each re-solved |
 | `scripts/demo.py` | Runs each part and prints readable output |
 | `tests/test_core.py` | Correctness tests, including a cross-check against SciPy |
+
+## Deploy to Azure
+
+Azure Container Apps (Azure for Students subscription), region East Asia.
+
+| App | Role | CPU / memory |
+|---|---|---|
+| `scso-mono` | Monolith | 1.5 / 3 GiB |
+| `scso-api` | Microservices gateway | 0.5 / 1 GiB |
+| `scso-opt` | Optimization service | 0.5 / 1 GiB |
+| `scso-sim` | Simulation service | 0.5 / 1 GiB |
+
+```powershell
+az login
+.\infra\deploy.ps1      # create or update everything (safe to re-run)
+.\infra\teardown.ps1    # delete everything
+```
+
+All apps scale to zero when idle; the first request after a pause is slow (cold start).
+
+Constraints of the student subscription, and how we handled them:
+- Only five regions are allowed; Container Apps is available in East Asia, so we use it.
+- ACR Tasks (cloud builds) are blocked; images are built locally with Docker and pushed.
+- The environment is an "express" Container Apps environment: no app-to-app calls by name,
+  so the gateway reaches the optimizer and simulation through their public HTTPS addresses.
+  Measured service-to-service overhead therefore includes the public ingress hop.
