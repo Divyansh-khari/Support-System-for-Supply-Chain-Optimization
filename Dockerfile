@@ -21,6 +21,8 @@ RUN useradd --create-home appuser
 USER appuser
 
 EXPOSE 8000
-# WORKERS stays 1 by default: on Container Apps we scale by adding replicas,
-# so one process per replica keeps "replicas" and "capacity" the same thing.
-CMD ["sh", "-c", "uvicorn services.${SERVICE}.main:app --host 0.0.0.0 --port ${PORT} --workers ${WORKERS}"]
+# WORKERS = worker processes per container. One Python process uses about one
+# CPU at most, so the 1.5-CPU monolith runs WORKERS=2 to use its whole budget;
+# the 0.5-CPU microservices keep the default of 1.
+# REPLICA_ID: one random ID per container, so responses show which copy answered.
+CMD ["sh", "-c", "export REPLICA_ID=replica-$(cut -c1-8 /proc/sys/kernel/random/uuid); uvicorn services.${SERVICE}.main:app --host 0.0.0.0 --port ${PORT} --workers ${WORKERS}"]

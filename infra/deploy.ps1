@@ -113,7 +113,8 @@ $SIM_URL = App-Url $APP_SIM
 Deploy-App $APP_API  0.5 "1.0Gi" @("SERVICE=api", "MODE=microservices",
                                    "OPTIMIZER_URL=$OPT_URL",
                                    "SIMULATION_URL=$SIM_URL")
-Deploy-App $APP_MONO 1.5 "3.0Gi" @("SERVICE=api", "MODE=monolith")
+# WORKERS=2: one Python process can only use ~1 CPU, the monolith has 1.5.
+Deploy-App $APP_MONO 1.5 "3.0Gi" @("SERVICE=api", "MODE=monolith", "WORKERS=2")
 
 # ---------------------------------------------------------------- 5. where to find it
 $monoUrl = App-Url $APP_MONO

@@ -14,7 +14,7 @@ services:
   monolith:
     <<: *app
     profiles: [monolith]
-    environment: { SERVICE: api, MODE: monolith }
+    environment: { SERVICE: api, MODE: monolith, WORKERS: 2 }
     ports: ["8000:8000"]
     cpus: 1.5
     mem_limit: 3g

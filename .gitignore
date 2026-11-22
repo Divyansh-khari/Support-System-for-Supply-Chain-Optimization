@@ -9,3 +9,4 @@ results/raw/
 .DS_Store
 .idea/
 .vscode/
+results/local/
