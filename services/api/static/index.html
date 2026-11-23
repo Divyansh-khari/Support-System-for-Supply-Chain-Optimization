@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supply Allocation Planner</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --text: #1c2430; --muted: #5d6b7c;
+    --line: #dde2e8; --accent: #1f6feb; --accent-soft: #e6efff;
+    --good: #1a7f37; --warn: #b35900; --bad: #c62828; --bad-soft: #fdecec;
+    --cell: #e8f1ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f141a; --card: #171e26; --text: #e6edf3; --muted: #9aa7b4;
+      --line: #2a3441; --accent: #4c8dff; --accent-soft: #16243a;
+      --good: #3fb950; --warn: #e3963e; --bad: #ff6b6b; --bad-soft: #3a1d1d;
+      --cell: #1b2b44;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+  h1 { font-size: 24px; margin: 0; }
+  h2 { font-size: 17px; margin: 0 0 12px; }
+  .sub { color: var(--muted); margin: 4px 0 20px; }
+  .badge { font-size: 12px; color: var(--muted); border: 1px solid var(--line);
+           border-radius: 999px; padding: 2px 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+          padding: 18px; margin-bottom: 16px; }
+  textarea { width: 100%; min-height: 170px; font: 13px/1.5 ui-monospace, Consolas, monospace;
+             color: var(--text); background: var(--bg); border: 1px solid var(--line);
+             border-radius: 8px; padding: 10px; resize: vertical; }
+  .hint { color: var(--muted); font-size: 13px; margin: 6px 0 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  button, .filebtn { font: inherit; border-radius: 8px; padding: 8px 14px; cursor: pointer;
+                     border: 1px solid var(--line); background: var(--card); color: var(--text); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button:disabled { opacity: .6; cursor: wait; }
+  input[type=file] { display: none; }
+  label.inline { color: var(--muted); font-size: 14px; }
+  input[type=number] { width: 110px; font: inherit; padding: 6px 8px; border-radius: 8px;
+                       border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  .error { background: var(--bad-soft); color: var(--bad); border-radius: 8px; padding: 10px 12px;
+           margin-top: 12px; white-space: pre-wrap; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .tile { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .tile .k { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .tile .v { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .good { color: var(--good); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 14px; }
+  th, td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { color: var(--muted); font-weight: 600; }
+  td.ship { background: var(--cell); font-weight: 600; }
+  td.zero { color: var(--muted); }
+  tr.total td { font-weight: 600; border-top: 2px solid var(--line); }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Supply Allocation Planner</h1>
+    <span class="badge" id="server">connecting…</span>
+  </header>
+  <p class="sub">Enter warehouse supply, store demand and the cost of shipping one unit on each route.
+     The optimizer finds the cheapest shipping plan and reports any demand that cannot be met.</p>
+
+  <section class="card">
+    <h2>1. Your data</h2>
+    <textarea id="csv" spellcheck="false"></textarea>
+    <p class="hint">CSV layout: first row = store names then <b>supply</b>; one row per warehouse
+       (name, cost to each store, its supply); last row = <b>demand</b> per store.</p>
+    <div class="row">
+      <label class="filebtn" for="file">Upload CSV…</label>
+      <input type="file" id="file" accept=".csv,text/csv">
+      <button id="example">Load example</button>
+      <label class="inline">Shortage penalty per unit
+        <input type="number" id="penalty" min="0" step="any" placeholder="auto"></label>
+      <button class="primary" id="run">Find cheapest plan</button>
+    </div>
+    <div class="error" id="error" hidden></div>
+  </section>
+
+  <section class="card" id="results" hidden>
+    <h2>2. Best shipping plan</h2>
+    <div class="tiles" id="tiles"></div>
+    <div class="scroll"><table id="plan"></table></div>
+    <div class="row" style="margin-top:12px">
+      <button id="download">Download plan (CSV)</button>
+    </div>
+    <p class="foot" id="served"></p>
+  </section>
+</main>
+
+<script>
+const EXAMPLE = `,Jaipur,Lucknow,Pune,Hyderabad,Bengaluru,supply
+Delhi,4,5,12,13,17,300
+Mumbai,9,12,3,7,9,250
+Chennai,18,16,9,5,3,200
+demand,120,150,180,160,110,`;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (x, d = 0) => Number(x).toLocaleString("en-IN", {maximumFractionDigits: d, minimumFractionDigits: d});
+let last = null;   // {problem, result} of the latest run, for the CSV download
+
+function showError(msg) { $("error").textContent = msg; $("error").hidden = !msg; }
+
+// Turn the CSV text into {warehouses, stores, supply, demand, cost}.
+function parse(text) {
+  const rows = text.trim().split(/\r?\n/).filter(l => l.trim()).map(l => l.split(",").map(c => c.trim()));
+  if (rows.length < 3) throw new Error("Need a header row, at least one warehouse row and a demand row.");
+  const header = rows[0];
+  if ((header[header.length - 1] || "").toLowerCase() !== "supply")
+    throw new Error('The last column of the first row must be "supply".');
+  const stores = header.slice(1, -1);
+  if (!stores.length) throw new Error("No store columns found in the first row.");
+  const last = rows[rows.length - 1];
+  if ((last[0] || "").toLowerCase() !== "demand")
+    throw new Error('The last row must start with "demand".');
+
+  const num = (v, where) => {
+    const n = Number(v);
+    if (v === "" || !Number.isFinite(n) || n < 0) throw new Error(`${where}: "${v}" is not a non-negative number.`);
+    return n;
+  };
+  const demand = stores.map((s, j) => num(last[j + 1] ?? "", `Demand of ${s}`));
+  const warehouses = [], supply = [], cost = [];
+  for (const r of rows.slice(1, -1)) {
+    const name = r[0] || `Warehouse ${warehouses.length + 1}`;
+    if (r.length < stores.length + 2) throw new Error(`Row "${name}" has too few values.`);
+    warehouses.push(name);
+    cost.push(stores.map((s, j) => num(r[j + 1], `Cost ${name} → ${s}`)));
+    supply.push(num(r[stores.length + 1], `Supply of ${name}`));
+  }
+  return {warehouses, stores, supply, demand, cost};
+}
+
+async function run() {
+  showError("");
+  let p;
+  try { p = parse($("csv").value); } catch (e) { showError(e.message); return; }
+
+  const body = {supply: p.supply, demand: p.demand, cost: p.cost, include_plan: true};
+  const pen = $("penalty").value.trim();
+  if (pen) body.penalty = Number(pen);
+
+  $("run").disabled = true; $("run").textContent = "Optimizing…";
+  try {
+    const r = await fetch("/optimize/custom", {
+      method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+    const data = await r.json();
+    if (!r.ok) {
+      const d = data.detail;
+      throw new Error(Array.isArray(d) ? d.map(x => x.msg).join("\n") : (d || `HTTP ${r.status}`));
+    }
+    last = {problem: p, result: data};
+    render(p, data);
+  } catch (e) {
+    showError("Could not optimize: " + e.message);
+  } finally {
+    $("run").disabled = false; $("run").textContent = "Find cheapest plan";
+  }
+}
+
+function render(p, r) {
+  const totalDemand = p.demand.reduce((a, b) => a + b, 0);
+  const fill = r.fill_rate * 100;
+  const tiles = [
+    ["Total cost", "₹" + fmt(r.objective, 2), ""],
+    ["Shipping cost", "₹" + fmt(r.shipping_cost, 2), ""],
+    ["Unmet demand", fmt(r.unmet_demand, 1) + " units", r.unmet_demand > 1e-6 ? "bad" : "good"],
+    ["Fill rate", fmt(fill, 1) + "%", fill >= 99.99 ? "good" : fill >= 95 ? "warn" : "bad"],
+    ["Solved in", fmt(r.total_seconds * 1000, 0) + " ms", ""],
+  ];
+  $("tiles").innerHTML = tiles.map(([k, v, c]) =>
+    `<div class="tile"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`).join("");
+
+  const received = p.stores.map((_, j) => r.plan.reduce((a, row) => a + row[j], 0));
+  let h = "<thead><tr><th>From \\ To</th>" + p.stores.map(s => `<th>${esc(s)}</th>`).join("") +
+          "<th>Sent / supply</th></tr></thead><tbody>";
+  r.plan.forEach((row, i) => {
+    const sent = row.reduce((a, b) => a + b, 0);
+    h += `<tr><td>${esc(p.warehouses[i])}</td>` +
+         row.map(v => v > 1e-6 ? `<td class="ship">${fmt(v, 1)}</td>` : `<td class="zero">–</td>`).join("") +
+         `<td>${fmt(sent, 1)} / ${fmt(p.supply[i], 1)}</td></tr>`;
+  });
+  h += `<tr class="total"><td>Received / demand</td>` +
+       received.map((v, j) => {
+         const short = p.demand[j] - v > 1e-6;
+         return `<td class="${short ? "bad" : ""}">${fmt(v, 1)} / ${fmt(p.demand[j], 1)}</td>`;
+       }).join("") + `<td>${fmt(received.reduce((a, b) => a + b, 0), 1)} / ${fmt(totalDemand, 1)}</td></tr></tbody>`;
+  $("plan").innerHTML = h;
+
+  const s = r.served_by || {};
+  $("served").textContent = `Computed by ${s.service || "?"} (${s.replica || "?"})` +
+    (r.network_overhead_ms !== undefined ? ` · service-to-service overhead ${fmt(r.network_overhead_ms, 1)} ms` : "");
+  $("results").hidden = false;
+}
+
+function downloadPlan() {
+  if (!last) return;
+  const {problem: p, result: r} = last;
+  const q = (s) => /[",\n]/.test(s) ? `"${String(s).replace(/"/g, '""')}"` : s;
+  const lines = [["from", "to", "units", "cost_per_unit", "route_cost"].join(",")];
+  r.plan.forEach((row, i) => row.forEach((v, j) => {
+    if (v > 1e-6) lines.push([q(p.warehouses[i]), q(p.stores[j]), v, p.cost[i][j],
+                              +(v * p.cost[i][j]).toFixed(2)].join(","));
+  }));
+  const url = URL.createObjectURL(new Blob([lines.join("\n")], {type: "text/csv"}));
+  const a = Object.assign(document.createElement("a"), {href: url, download: "shipping_plan.csv"});
+  a.click(); URL.revokeObjectURL(url);
+}
+
+$("example").onclick = () => { $("csv").value = EXAMPLE; showError(""); };
+$("run").onclick = run;
+$("download").onclick = downloadPlan;
+$("file").onchange = async (e) => {
+  const f = e.target.files[0];
+  if (f) { $("csv").value = await f.text(); showError(""); }
+  e.target.value = "";
+};
+
+$("csv").value = EXAMPLE;
+fetch("/health").then(r => r.json())
+  .then(h => $("server").textContent = `${h.mode} · ${h.replica}`)
+  .catch(() => $("server").textContent = "server not reachable");
+</script>
+</body>
+</html>

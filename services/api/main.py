@@ -17,10 +17,12 @@ import socket
 import uuid
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import FileResponse
 
 from scm_core import generate_instance, make_instance, run_scenarios, solve
 from scm_core.schemas import CustomProblem, InstanceSpec, OptimizeRequest, SimulateRequest
@@ -73,6 +75,15 @@ app = FastAPI(title="Supply Chain Decision Support API", lifespan=lifespan)
 @app.get("/health")
 def health():
     return {"service": "api", "mode": MODE, "replica": REPLICA, "status": "ok"}
+
+STATIC = Path(__file__).parent / "static"
+
+
+@app.get("/", include_in_schema=False)
+def ui():
+    """The decision-support web page. It runs in the browser and calls
+    /optimize/custom on this same server, so it needs no separate hosting."""
+    return FileResponse(STATIC / "index.html")
 
 
 @app.post("/instances/summary")

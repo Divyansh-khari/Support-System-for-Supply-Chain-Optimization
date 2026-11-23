@@ -95,3 +95,12 @@ def test_downstream_down_gives_502(monkeypatch):
     with TestClient(api.app) as c:
         r = c.post("/optimize", json=OPT)
     assert r.status_code == 502
+
+
+def test_ui_page_is_served(monkeypatch):
+    api = load_api(monkeypatch, "monolith")
+    with TestClient(api.app) as c:
+        r = c.get("/")
+    assert r.status_code == 200
+    assert "text/html" in r.headers["content-type"]
+    assert "/optimize/custom" in r.text          # the page calls the custom route
