@@ -1,0 +1,2 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+POST,/optimize,"CatchResponseError('HTTP 503: {\'detail\': \'{""error"":""App port is not ready""}\'}')",6,2026-11-23T07:38:17Z,2026-11-23T07:38:20Z

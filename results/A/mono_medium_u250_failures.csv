@@ -1,0 +1,2 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+POST,/optimize,"CatchResponseError(""HTTP 502: {'error': 'Failed to forward request'}"")",1,2026-11-23T07:01:27Z,2026-11-23T07:01:27Z

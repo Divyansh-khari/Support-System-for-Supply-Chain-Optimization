@@ -1,0 +1,8 @@
+time,route,status,client_ms,compute_ms,overhead_ms,service,replica
+1795418625.444,/optimize,200,100933.8,46548.0,,api-monolith,replica-97b0237c
+1795418636.522,/optimize,200,111953.2,28590.1,,api-monolith,replica-97b0237c
+1795418638.524,/optimize,200,113942.1,30411.4,,api-monolith,replica-97b0237c
+1795418638.543,/optimize,200,113026.8,31575.3,,api-monolith,replica-97b0237c
+1795418638.546,/optimize,200,113968.8,32523.5,,api-monolith,replica-97b0237c
+1795418638.582,/optimize,200,114010.7,34163.5,,api-monolith,replica-97b0237c
+1795418638.611,/optimize,200,114031.1,33957.1,,api-monolith,replica-97b0237c

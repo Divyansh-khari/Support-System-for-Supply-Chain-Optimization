@@ -1,0 +1,4 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+POST,/optimize,"CatchResponseError('HTTP 503: {\'detail\': \'{""error"":""App port is not ready""}\'}')",13,2026-11-23T07:35:32Z,2026-11-23T07:35:37Z
+POST,/optimize,"CatchResponseError('HTTP 0, body is not JSON')",1,2026-11-23T07:34:57Z,2026-11-23T07:34:57Z
+POST,/optimize,"CatchResponseError('HTTP 502: {\'detail\': \'{""error"":""Failed to forward request""}\'}')",207,2026-11-23T07:34:54Z,2026-11-23T07:35:06Z

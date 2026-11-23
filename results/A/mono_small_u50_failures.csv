@@ -1,0 +1,2 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+POST,/optimize,"CatchResponseError('HTTP 0, body is not JSON')",1,2026-11-23T06:29:35Z,2026-11-23T06:29:35Z
