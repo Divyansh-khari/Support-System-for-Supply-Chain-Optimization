@@ -1,0 +1,2 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+POST,/simulate,"CatchResponseError('HTTP 502: {\'detail\': \'{""error"":""Failed to forward request""}\'}')",8,2026-11-23T12:13:59Z,2026-11-23T12:15:30Z

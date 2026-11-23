@@ -1,0 +1,3 @@
+Method,Name,Error,Occurrences,First Seen,Last Seen
+POST,/instances/summary,"CatchResponseError('HTTP 0, body is not JSON')",1,2026-11-23T11:52:56Z,2026-11-23T11:52:56Z
+POST,/simulate,"CatchResponseError('HTTP 502: {\'detail\': \'{""error"":""Failed to forward request""}\'}')",5,2026-11-23T11:52:38Z,2026-11-23T11:54:24Z
