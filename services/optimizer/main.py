@@ -4,7 +4,6 @@ In the microservices deployment this runs in its own container. In the
 monolith, the API service calls the same scm_core functions directly.
 """
 import os
-import socket
 import uuid
 from fastapi import FastAPI
 
@@ -16,9 +15,9 @@ app = FastAPI(title="Optimization Service")
 # A unique ID per running container. Azure's express environment gives every
 # container the same hostname, so the Docker start command sets REPLICA_ID to a
 # random value once per container (shared by all worker processes inside it).
-# Outside Docker we fall back to hostname + a random suffix.
+# Outside Docker we use "local-" + a random suffix
 REPLICA = (os.getenv("CONTAINER_APP_REPLICA_NAME") or os.getenv("REPLICA_ID")
-           or f"{socket.gethostname()}-{uuid.uuid4().hex[:6]}")
+           or f"local-{uuid.uuid4().hex[:6]}")
 
 
 @app.get("/health")
